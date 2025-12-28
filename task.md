@@ -1,0 +1,27 @@
+# Task: Refactor for Advanced Features
+
+- [ ] Setup & Dependencies <!-- id: 0 -->
+    - [x] Install `zustand`. <!-- id: 1 -->
+- [ ] Implement Label Engine <!-- id: 2 -->
+    - [x] Create `useLabelStore` (State for Template, QR Size, ECC). <!-- id: 3 -->
+    - [x] Create `LabelTemplates.js` (Definitions for Standard/Folded). <!-- id: 4 -->
+    - [x] Create `PrintManager.jsx` (Dynamic CSS injection). <!-- id: 5 -->
+- [x] Upgrade `QRLabelGenerator` <!-- id: 6 -->
+    - [x] Integrate Store for settings. <!-- id: 7 -->
+    - [x] Add Template Selector UI. <!-- id: 8 -->
+    - [x] Make QR Size/ECC dynamic in render. <!-- id: 9 -->
+- [x] Verify Code Integrity <!-- id: 10 -->
+    - [x] Test Build. <!-- id: 11 -->
+    - [x] Verify CSV/Sheet logic remains untouched. <!-- id: 12 -->
+- [x] Deploy to Desktop <!-- id: 13 -->
+    - [x] Copy refactored source. <!-- id: 14 -->
+    - [x] Install dependencies. <!-- id: 15 -->
+- [x] Dimension Controls <!-- id: 16 -->
+    - [x] Add Width/Height inputs to Settings. <!-- id: 18 -->
+- [x] Advanced Layout Controls <!-- id: 19 -->
+    - [x] Add Text Area W/H inputs. <!-- id: 20 -->
+    - [x] Add Gap input. <!-- id: 21 -->
+    - [x] Fix UI rendering bug. <!-- id: 22 -->
+- [x] Optimize Print Workflow <!-- id: 23 -->
+    - [x] Refactor CSS for block layout/page breaks. <!-- id: 24 -->
+    - [x] Create Silent Printing Guide. <!-- id: 25 -->

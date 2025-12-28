@@ -1,0 +1,67 @@
+/* Tailwind routed via CDN to avoid build errors */
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    background-color: #020617;
+    /* Dark Mode default */
+    color: #f8fafc;
+}
+
+@media print {
+    body {
+        background-color: white;
+        color: black;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Hide everything by default */
+    body * {
+        visibility: hidden;
+    }
+
+    /* Only show the printable area */
+    #print-area,
+    #print-area * {
+        visibility: visible;
+    }
+
+    #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        /* Let PrintManager handle display type (block/grid) */
+    }
+
+    /* The physical tag container */
+    .label-card {
+        /* Dimensions handled by PrintManager */
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        /* Critical for thermal printers: treat each label as a page */
+        break-inside: avoid;
+        page-break-inside: avoid;
+        break-after: page;
+        page-break-after: always;
+
+        background: transparent;
+    }
+
+    /* Remove specific printable-area dims, let content flow */
+    .printable-area {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+}
