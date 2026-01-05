@@ -29,16 +29,55 @@ def print_tsc(printer, rows, w,h,gap,qr, qx,qy, tx,ty, media, code_format="QR", 
     setup_cmd.append("DIRECTION 1")
     win32print.WritePrinter(ph, "\r\n".join(setup_cmd).encode('utf-8') + b"\r\n")
 
+    # Import textwrap for handling long labels
+    import textwrap
+
     for r in rows:
         cmd = []
         cmd.append("CLS")
         
-        # 1. Print Text
+        # 1. Print Text (Smart Check)
+        # Calculate Safe Width (Text Start -> QR Start - Margin)
+        # Assuming Font 2 is approx 8 dots wide + 1 dot spacing = 9 dots/char
+        
+        # Determine strict boundary: Where does the text area end?
+        # If QR is to the right (tx < qx), limit is qx.
+        # If QR is to the left (qx < tx), limit is Label Width.
+        
+        limit_width_dots = 0
+        if tx < qx:
+            limit_width_dots = qx - tx - 16 # 2mm safety margin
+        else:
+            limit_width_dots = (w * 8) - tx - 8 # End of label
+            
+        if limit_width_dots < 50: limit_width_dots = 50 # Minimum safety
+        
+        # Estimate Check
+        char_width_dots = 9 # Font 2 safe estimate
+        max_chars_per_line = int(limit_width_dots / char_width_dots)
+        
         y = ty
-        for line in r["text"].splitlines():
-            safe_text = line.replace('"', '\\"')
-            cmd.append(f"TEXT {tx},{y},\"2\",0,1,1,\"{safe_text}\"")
-            y += 24
+        original_lines = r["text"].splitlines()
+        
+        # Process each original line (like "Line1\nLine2")
+        # And wrap them individually so they don't bleed.
+        for line in original_lines:
+            wrapped = textwrap.wrap(line, width=max_chars_per_line)
+            for w_line in wrapped:
+                # Vertical Safety Check: Don't print if we hit the bottom
+                # (Assuming standard height or just reasonable limit)
+                # But user said "in last cut" -> implies truncation.
+                
+                safe_text = w_line.replace('"', '\\"')
+                cmd.append(f"TEXT {tx},{y},\"2\",0,1,1,\"{safe_text}\"")
+                y += 24 # Line height for Font 2 (12 dots font + 12 dots spacing)
+                
+                # Optional: Stop if too many lines? User said "last cut".
+                # If we want to prevent running OFF the label.
+                # Let's assume 10 lines max to prevent infinite drift.
+                if y > (h * 8) - 10: 
+                    break 
+            if y > (h * 8) - 10: break
         
         # 2. Print QR (Bitmap Mode for Fidelity)
         # If 'qr_image' is passed in the row (PIL Image), we print it as a BITMAP.
