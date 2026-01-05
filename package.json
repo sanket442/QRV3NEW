@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "print": "start direct_print.bat",
     "build": "vite build",
     "lint": "eslint .",
