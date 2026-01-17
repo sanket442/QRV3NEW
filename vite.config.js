@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: "/QRV3NEW/",
   server: {
-    port: 5175,
+    host: true, // Listen on all local IPs (needed for LAN access)
+    port: 5173, // Standard Vite port
     strictPort: true,
   }
 })

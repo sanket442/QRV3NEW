@@ -8,11 +8,11 @@ const useLabelStore = create((set) => ({
         width: parseFloat(localStorage.getItem('default_template_width')) || TEMPLATES.FOLDED.width,
         height: parseFloat(localStorage.getItem('default_template_height')) || TEMPLATES.FOLDED.height,
         gap: parseFloat(localStorage.getItem('default_template_gap')) || TEMPLATES.FOLDED.gap || 0,
-        // Position Overrides (Defaults set to User Preference: 40, 4, 6, 8)
+        // Position Overrides (Defaults set to User Preference: 40, 4, 10, 10)
         qrX: parseFloat(localStorage.getItem('default_qr_x')) || 40,
         qrY: parseFloat(localStorage.getItem('default_qr_y')) || 4,
-        textX: parseFloat(localStorage.getItem('default_text_x')) || 6,
-        textY: parseFloat(localStorage.getItem('default_text_y')) || 8,
+        textX: parseFloat(localStorage.getItem('default_text_x')) || 10,
+        textY: parseFloat(localStorage.getItem('default_text_y')) || 10,
     },
 
     // QR Settings

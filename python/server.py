@@ -151,6 +151,12 @@ def api_fetch_sheet():
         if "/d/" in url:
             sid = url.split("/d/")[1].split("/")[0]
             csv_url = f"https://docs.google.com/spreadsheets/d/{sid}/export?format=csv"
+            
+            # Support Specific Tab (GID)
+            import re
+            gid_match = re.search(r'[?&]gid=(\d+)', url)
+            if gid_match:
+                csv_url += f"&gid={gid_match.group(1)}"
         else:
             # Assume it's a direct CSV link or try as is
             csv_url = url
@@ -304,52 +310,71 @@ def api_print():
             print(f"Auto-Scaling Error: {ex}")
             pass
 
-    # Prepare Data with Bitmaps if needed
+    # --- REVERTED TO PROVEN LOGIC (FROM OLD CODE) ---
+    # We maintain the "Auto-Scaling" safety for Version sizing, 
+    # but we DO NOT generate bitmaps. We let the printer firmware do it.
+    
+    # Just ensure we have valid rows
+    if not rows: return jsonify({"error": "No rows"}), 400
+
+    # --- ROBUST BITMAP GENERATION (Restored & Optimized) ---
+    # This ensures Consistent Physical Size + Max Scannability
+    
     for r in rows:
         if printer_type == "TSC" and code_format == "QR":
             try:
-                # Generate Python QR Image (Scannable)
-                # Use same ecc logic
+                # 1. OPTIMIZE ECC for Density
+                # If text is long, drop ECC to 'L' to save space (fewer modules = bigger dots = better scan)
+                loop_ecc = ecc
+                if len(r['qr']) > 150:
+                    loop_ecc = 'L'
+                    
                 ecc_map = {'L': qrcode.constants.ERROR_CORRECT_L, 'M': qrcode.constants.ERROR_CORRECT_M, 'Q': qrcode.constants.ERROR_CORRECT_Q, 'H': qrcode.constants.ERROR_CORRECT_H}
-                ecc_level = ecc_map.get(ecc, qrcode.constants.ERROR_CORRECT_M)
+                ecc_val = ecc_map.get(loop_ecc, qrcode.constants.ERROR_CORRECT_M)
+
+                # 2. Constraints (Label Dimensions)
+                # Maximize size within the label height
+                avail_h_dots = int((height - 1.0) * 8)
+                avail_w_dots = int((width - qr_x - 1.0) * 8)
+                max_box_side = min(avail_h_dots, avail_w_dots)
                 
-                # --- SMART BITMAP SCALING ---
-                # 1. Generate formatted data to know the Matrix Size
-                qr_temp = qrcode.QRCode(version=None, error_correction=ecc_level, box_size=1, border=4)
-                qr_temp.add_data(r.get('qr', ''))
-                qr_temp.make(fit=True)
-                matrix_size = qr_temp.modules_count + 8 # +8 for the border (4*2)
+                # 3. Generate Base Matrix
+                qr = qrcode.QRCode(version=None, error_correction=ecc_val, box_size=1, border=4)
+                qr.add_data(r['qr'])
+                qr.make(fit=True)
                 
-                # 2. Calculate Constraints (25mm height is approx 200 dots at 203 DPI)
-                # Height Limit: 25mm - 1mm margins = 24mm * 8 = 192 dots
-                max_h_dots = (height - 0.5) * 8 
+                # 4. Calculate Perfect Integer Scale
+                # We want the largest integer multiplier (e.g. 3x) that fits in max_box_side
+                matrix_dim = qr.modules_count + 8 # +8 for border
                 
-                # Width Limit: Label Width - X position - Margin
-                max_w_dots = (width - qr_x - 1.0) * 8
+                scale = max_box_side // matrix_dim
+                if scale < 2: scale = 2 # Minimum readability floor (might clip slightly if huge data, but better than unreadable)
                 
-                # 3. Calculate max possible integer cell size
-                safe_cell_h = int(max_h_dots / matrix_size)
-                safe_cell_w = int(max_w_dots / matrix_size)
+                final_qr_dim = matrix_dim * scale
                 
-                max_allowed_cell = min(safe_cell_h, safe_cell_w)
-                if max_allowed_cell < 1: max_allowed_cell = 1
+                # 5. Create Crisp Image
+                # Resize matrix to final dimension
+                img_raw = qr.make_image(fill_color="black", back_color="white")
+                img_crisp = img_raw.resize((final_qr_dim, final_qr_dim), Image.NEAREST)
                 
-                # 4. Use User Preference limit
-                # If user wants size 6, but we can only fit size 3, use 3.
-                # If we can fit size 10, but user only wants 6, use 6.
-                final_cell_size = int(min(qr_size, max_allowed_cell))
+                # 6. Center on Consistent Canvas
+                # We create a canvas of 'max_box_side' so all labels look same size
+                # Ensure canvas is multiple of 8 width for printer safety
+                canvas_dim = (max_box_side // 8) * 8 
+                if canvas_dim < final_qr_dim: canvas_dim = final_qr_dim # Expand if needed
                 
-                print(f"Bitmap Gen: Matrix={matrix_size}x{matrix_size}, SafeCell={max_allowed_cell}, UserCell={qr_size} -> Final={final_cell_size}")
+                final_canvas = Image.new('1', (canvas_dim, canvas_dim), 1) # 1=White
                 
-                # 5. Generate Final Image
-                qr_final = qrcode.QRCode(version=None, error_correction=ecc_level, box_size=final_cell_size, border=4)
-                qr_final.add_data(r.get('qr', ''))
-                qr_final.make(fit=True)
-                img = qr_final.make_image(fill_color="black", back_color="white")
+                ox = (canvas_dim - final_qr_dim) // 2
+                oy = (canvas_dim - final_qr_dim) // 2
                 
-                r['qr_image'] = img
+                final_canvas.paste(img_crisp, (ox, oy))
+                r['qr_image'] = final_canvas
+                
+                print(f"Bitmap Gen: DataLen={len(r['qr'])}, ECC={loop_ecc}, Scale={scale}, Canvas={canvas_dim}")
+
             except Exception as e:
-                 print(f"Error generating bitmap for print: {e}")
+                print(f"Bitmap Error: {e}") 
 
     try:
         if printer_type == "TSC":

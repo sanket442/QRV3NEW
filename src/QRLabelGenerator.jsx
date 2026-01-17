@@ -77,6 +77,9 @@ const QRLabelGenerator = () => {
 
         const savedCellSize = localStorage.getItem('default_qr_cell_size');
         if (savedCellSize) setPrintQrCellSize(parseFloat(savedCellSize));
+
+        const savedSheetUrl = localStorage.getItem('default_sheet_url');
+        if (savedSheetUrl) setSheetUrl(savedSheetUrl);
     }, []);
 
     // Auto-save settings when they change (Optional, but user asked for explicit "Default Settings" behavior)
@@ -99,6 +102,7 @@ const QRLabelGenerator = () => {
         localStorage.setItem('default_qr_ecc', qrSettings.ecc);
         localStorage.setItem('default_dm_width', qrSettings.dmWidth);
         localStorage.setItem('default_dm_height', qrSettings.dmHeight);
+        localStorage.setItem('default_sheet_url', sheetUrl);
 
         // Save Position Overrides
         if (activeTemplate.qrX) localStorage.setItem('default_qr_x', activeTemplate.qrX);
@@ -114,15 +118,15 @@ const QRLabelGenerator = () => {
     const [manualLabelText, setManualLabelText] = useState('');
 
     // Sheet Input State
-    const [sheetUrl, setSheetUrl] = useState('https://docs.google.com/spreadsheets/d/1tlQOm4DeA4AS9a16qD156TipuGlJNOXWFbxcKaODfK4/edit');
+    const [sheetUrl, setSheetUrl] = useState('https://docs.google.com/spreadsheets/d/1NhfH3D5x_9hvYQ76LFiRxeh-okwdJ74hIk1kwNrHBYk/edit?gid=1319337220#gid=1319337220');
     const [loading, setLoading] = useState(false);
     const [sheetData, setSheetData] = useState([]);
     const [headers, setHeaders] = useState([]);
-    const [columnMapping, setColumnMapping] = useState({ qr: '', label: '' });
+    const [columnMapping, setColumnMapping] = useState({ qr: 'PO Numbers', label: 'For barcode' });
 
     // Row Range Selectors
     const [rangeStart, setRangeStart] = useState(2);
-    const [rangeEnd, setRangeEnd] = useState(100);
+    const [rangeEnd, setRangeEnd] = useState(10);
 
     const [step, setStep] = useState(1);
     const [showSettings, setShowSettings] = useState(false);
@@ -199,7 +203,7 @@ const QRLabelGenerator = () => {
             if (data.rows && data.rows.length > 0) {
                 setHeaders(data.headers);
                 setSheetData(data.rows);
-                setRangeEnd(data.rows.length);
+                // setRangeEnd(data.rows.length);
                 setStep(2);
             }
         } catch (error) {
